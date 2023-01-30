@@ -5,3 +5,4 @@ class DBKey {
         const val DB_ARTICLES = "Articles"
     }
 }
+

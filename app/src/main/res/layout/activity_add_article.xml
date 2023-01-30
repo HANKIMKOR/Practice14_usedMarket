@@ -56,6 +56,7 @@
 
     <Button
         android:id="@+id/imageAddButton"
+        android:text="이미지 등록하기"
         android:backgroundTint="@color/orange"
         app:layout_constraintTop_toBottomOf="@id/photoImageView"
         app:layout_constraintStart_toStartOf="@id/photoImageView"
