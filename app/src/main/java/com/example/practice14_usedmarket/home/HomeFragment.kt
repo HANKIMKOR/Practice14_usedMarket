@@ -1,5 +1,6 @@
 package com.example.practice14_usedmarket.home
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
@@ -7,6 +8,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.practice14_usedmarket.DBKey.Companion.DB_ARTICLES
 import com.example.practice14_usedmarket.R
 import com.example.practice14_usedmarket.databinding.FragmentHomeBinding
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ChildEventListener
@@ -22,7 +24,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private lateinit var articleAdapter: ArticleAdapter
 
     private val articleList = mutableListOf<ArticleModel>()
-    private val listener = object: ChildEventListener {
+    private val listener = object : ChildEventListener {
         override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
 
             val articleModel = snapshot.getValue(ArticleModel::class.java)
@@ -51,7 +53,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private var binding: FragmentHomeBinding? = null
-    private val auth : FirebaseAuth by lazy {
+    private val auth: FirebaseAuth by lazy {
         Firebase.auth
     }
 
@@ -67,6 +69,21 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
         fragmentHomeBinding.articleRecyclerView.layoutManager = LinearLayoutManager(context)
         fragmentHomeBinding.articleRecyclerView.adapter = articleAdapter
+        fragmentHomeBinding.addFloatingButton.setOnClickListener {
+            context?.let {
+                if(auth.currentUser != null) {
+                    val intent = Intent(requireContext(), AddArticleActivity::class.java)
+                    startActivity(intent)
+                } else {
+                    Snackbar.make(view, "로그인 후 사용해주세요", Snackbar.LENGTH_LONG).show()
+                }
+            }
+
+
+//            //혹은 이렇게 작성해도 됨
+//            val intent = Intent(requireContext(), AddArticleActivity::class.java)
+//            startActivity(intent)
+        }
 
         articleDB.addChildEventListener(listener)
 
