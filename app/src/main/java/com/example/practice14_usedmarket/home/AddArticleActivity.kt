@@ -4,14 +4,18 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.DatabaseErrorHandler
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import com.example.practice14_usedmarket.DBKey.Companion.DB_ARTICLES
 import com.example.practice14_usedmarket.R
 import com.google.firebase.auth.FirebaseAuth
@@ -76,10 +80,19 @@ class AddArticleActivity : AppCompatActivity() {
                 }
         }
     }
+
     private fun startContentProvider() {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.type = "image/*"
         startActivityForResult(intent, 2020)
+    }
+
+    private fun showProgress() {
+        findViewById<ProgressBar>(R.id.progressBar).isVisible = true
+    }
+
+    private fun hideProgress() {
+        findViewById<ProgressBar>(R.id.progressBar).isVisible = false
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -96,24 +109,68 @@ class AddArticleActivity : AppCompatActivity() {
                     findViewById<ImageView>(R.id.photoImageView).setImageURI(uri)
                     selectedUri = uri
                 } else {
-                    Toast.makeText(this,"사진을 가져오지 못했습니다.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "사진을 가져오지 못했습니다.", Toast.LENGTH_SHORT).show()
                 }
             }
             else -> {
-                Toast.makeText(this,"사진을 가져오지 못했습니다.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "사진을 가져오지 못했습니다.", Toast.LENGTH_SHORT).show()
             }
         }
         findViewById<Button>(R.id.submitButton).setOnClickListener {
             val title = findViewById<EditText>(R.id.titleEditText).text.toString()
             val price = findViewById<EditText>(R.id.priceEditText).text.toString()
-            val sellerId = auth.currentUser?.uid
+            val sellerId = auth.currentUser?.uid.orEmpty()
 
-            val model = ArticleModel(sellerId, title, System.currentTimeMillis(), "$price 원", "")
-            articleDB.push().setValue(model)
+            showProgress()
+            // 중간에 이미지가 있으면 업로드 과정을 추가
+            if (selectedUri != null) {
+                val photoUri = selectedUri ?: return@setOnClickListener
+                uploadPhoto(photoUri,
+                    successHandler = { uri ->
 
-            finish()
+                        uploadArticle(sellerId, title, price, uri)
+
+                    },
+                    errorHandler = {
+                        Toast.makeText(this, "사진 업로드에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                        showProgress()
+                    }
+                )
+            } else {
+                uploadArticle(sellerId, title, price, "")
+            }
+
         }
     }
+
+    private fun uploadPhoto(uri: Uri, successHandler: (String) -> Unit, errorHandler: () -> Unit) {
+        val fileName = "${System.currentTimeMillis()}.png"
+        storage.reference.child("article/photo").child(fileName)
+            .putFile(uri)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    storage.reference.child("article/photo").child(fileName)
+                        .downloadUrl
+                        .addOnSuccessListener { uri ->
+                            successHandler(uri.toString())
+                        }.addOnFailureListener {
+                            errorHandler()
+                        }
+
+                } else {
+                    errorHandler
+                }
+            }
+    }
+
+    private fun uploadArticle(sellerId: String, title: String, price: String, imageUri: String) {
+        val model = ArticleModel(sellerId, title, System.currentTimeMillis(), "$price 원", "")
+        articleDB.push().setValue(model)
+
+        showProgress()
+        finish()
+    }
+
     private fun showPermissionContextPopup() {
         AlertDialog.Builder(this)
             .setTitle("권한이 필요합니다.")
