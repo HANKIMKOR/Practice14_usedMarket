@@ -6,7 +6,9 @@ import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.practice14_usedmarket.DBKey.Companion.DB_ARTICLES
+import com.example.practice14_usedmarket.DBKey.Companion.DB_USERS
 import com.example.practice14_usedmarket.R
+import com.example.practice14_usedmarket.chatlist.ChatListItem
 import com.example.practice14_usedmarket.databinding.FragmentHomeBinding
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
@@ -64,14 +66,38 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding = fragmentHomeBinding
 
         articleList.clear()
+        userDB = Firebase.database.reference.child(DB_USERS)
         articleDB = Firebase.database.reference.child(DB_ARTICLES)
-        articleAdapter = ArticleAdapter()
+        articleAdapter = ArticleAdapter(onItemClickd = { articleModel ->
+            if (auth.currentUser != null) {
+                // 로그인을 한 상태
+                if (auth.currentUser!!.uid != articleModel.sellerId) {
+                    val chatRoom = articleModel.sellerId?.let {
+                        ChatListItem(
+                            buyerId = auth.currentUser!!.uid,
+                            sellerId = it,
+                            itemTitle = articleModel.title,
+                            key = System.currentTimeMillis()
+                        )
+                    }
+
+                } else {
+                    // 내가 올린 아이템
+                    Snackbar.make(view, "내가 올린 아이템입니다.", Snackbar.LENGTH_LONG).show()
+                }
+            } else {
+                // 로그인을 안한 상태
+                Snackbar.make(view, "로그인 후 사용해주세요", Snackbar.LENGTH_LONG).show()
+            }
+
+
+        })
 
         fragmentHomeBinding.articleRecyclerView.layoutManager = LinearLayoutManager(context)
         fragmentHomeBinding.articleRecyclerView.adapter = articleAdapter
         fragmentHomeBinding.addFloatingButton.setOnClickListener {
             context?.let {
-                if(auth.currentUser != null) {
+                if (auth.currentUser != null) {
                     val intent = Intent(requireContext(), AddArticleActivity::class.java)
                     startActivity(intent)
                 } else {

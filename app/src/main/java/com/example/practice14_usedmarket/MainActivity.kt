@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.fragment.app.Fragment
 import com.example.practice14_usedmarket.chatlist.ChatListFragment
 import com.example.practice14_usedmarket.home.HomeFragment
-import com.example.practice14_usedmarket.mypage.MypageFragment
+import com.example.practice14_usedmarket.mypage.MyPageFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
@@ -15,7 +15,7 @@ class MainActivity : AppCompatActivity() {
 
         val homeFragment = HomeFragment()
         val chatListFragment = ChatListFragment()
-        val mypageFragment = MypageFragment()
+        val mypageFragment = MyPageFragment()
 
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
 
